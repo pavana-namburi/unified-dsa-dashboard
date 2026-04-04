@@ -2,6 +2,7 @@ package com.example.demo;
 
 import org.springframework.web.bind.annotation.*;
 
+@CrossOrigin(origins = "http://localhost:3001")
 @RestController
 @RequestMapping("/leetcode")
 public class LeetCodeController {

@@ -42,13 +42,19 @@ public class LeetCodeService {
 
             JsonNode submissions = user.path("submitStats").path("acSubmissionNum");
 
-            int easy = 0, medium = 0, hard = 0, total = 0;
+            int total = 0;
+            int easy = 0;
+            int medium = 0;
+            int hard = 0;
 
-            for (JsonNode sub : submissions) {
-                String difficulty = sub.path("difficulty").asText();
-                int count = sub.path("count").asInt();
-                total += count;
+            for (JsonNode node : submissions) {
+                String difficulty = node.get("difficulty").asText();
+                int count = node.get("count").asInt();
+
                 switch (difficulty) {
+                    case "All":
+                        total = count;
+                        break;
                     case "Easy":
                         easy = count;
                         break;
@@ -65,4 +71,5 @@ public class LeetCodeService {
         } catch (Exception e) {
             throw new RuntimeException("Error fetching data from LeetCode", e);
         }
-    }}
+    }
+}
