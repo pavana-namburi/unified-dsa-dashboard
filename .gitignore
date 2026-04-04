@@ -1,0 +1,14 @@
+# Java / Spring Boot
+backend/target/
+*.log
+
+# Node (future frontend)
+frontend/node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
