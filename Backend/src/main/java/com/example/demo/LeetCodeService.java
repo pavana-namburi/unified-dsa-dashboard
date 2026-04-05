@@ -20,6 +20,7 @@ public class LeetCodeService {
 
     // Method to get user stats
     public LeetCodeStatsResponse getUserStats(String username) {
+        System.out.println("[LeetCode Service] Fetching stats for: " + username);
         String url = "https://leetcode.com/graphql";
         String query = String.format(
                 "{ \"query\": \"query { matchedUser(username: \\\"%s\\\") { submitStats { acSubmissionNum { difficulty count } } } }\" }",
@@ -67,8 +68,12 @@ public class LeetCodeService {
                 }
             }
 
+            System.out.println("[LeetCode Service] Stats - Total: " + total + ", Easy: " + easy + ", Medium: " + medium
+                    + ", Hard: " + hard);
             return new LeetCodeStatsResponse(username, total, easy, medium, hard);
         } catch (Exception e) {
+            System.err.println("[LeetCode Service] Error fetching data from LeetCode: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Error fetching data from LeetCode", e);
         }
     }
