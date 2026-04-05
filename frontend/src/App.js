@@ -323,20 +323,15 @@ const loadingStyle = {
 
 function App() {
   const [leetcodeUsername, setLeetcodeUsername] = useState("");
-  const [gfgTotal, setGfgTotal] = useState("");
+  const [gfgUsername, setGfgUsername] = useState("");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [focusedInput, setFocusedInput] = useState("");
 
   const fetchData = async () => {
-    if (!leetcodeUsername.trim() || gfgTotal === "") {
-      setError("Please fill in both fields");
-      return;
-    }
-
-    if (parseInt(gfgTotal) < 0) {
-      setError("GFG total cannot be negative");
+    if (!leetcodeUsername.trim() && !gfgUsername.trim()) {
+      setError("Please enter at least one username");
       return;
     }
 
@@ -344,56 +339,66 @@ function App() {
     setError("");
 
     try {
+      const leetParam = leetcodeUsername.trim() || "";
+      const gfgParam = gfgUsername.trim() || "";
       const res = await fetch(
-        `http://localhost:8082/dashboard?leetcode=${leetcodeUsername}&gfgTotal=${gfgTotal}`
+        `http://localhost:8082/dashboard?leetcode=${leetParam}&gfg=${gfgParam}`
       );
-      if (!res.ok) throw new Error("Failed to fetch");
+      if (!res.ok) throw new Error("Failed to fetch data from server");
       const result = await res.json();
       setData(result);
     } catch (err) {
-      setError(err.message || "Failed to fetch data");
+      setError(err.message || "Failed to fetch data. Check your usernames and try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔥 Extract data safely
+  // 🔥 Extract data safely with optional chaining
   const leetcode = data?.leetcode || {};
   const gfg = data?.gfg || {};
+  const combined = data?.combined || {};
 
-  const leetcodeTotal = leetcode.totalSolved || 0;
-  const easy = leetcode.easy || 0;
-  const medium = leetcode.medium || 0;
-  const hard = leetcode.hard || 0;
+  const leetcodeTotal = leetcode?.totalSolved || 0;
+  const lcEasy = leetcode?.easy || 0;
+  const lcMedium = leetcode?.medium || 0;
+  const lcHard = leetcode?.hard || 0;
 
-  const gfgSolved = gfg.totalSolved || 0;
-  const totalCombined = data?.totalCombined || 0;
+  const gfgTotal = gfg?.totalSolved || 0;
+  const gfgEasy = gfg?.easy || 0;
+  const gfgMedium = gfg?.medium || 0;
+  const gfgHard = gfg?.hard || 0;
+
+  const combinedTotal = combined?.total || 0;
+  const combinedEasy = combined?.easy || 0;
+  const combinedMedium = combined?.medium || 0;
+  const combinedHard = combined?.hard || 0;
 
   const getPercentage = (value, total) =>
     total ? ((value / total) * 100).toFixed(1) : 0;
 
-  const leetcodePercentage = getPercentage(leetcodeTotal, totalCombined);
-  const gfgPercentage = getPercentage(gfgSolved, totalCombined);
+  const leetcodePercentage = getPercentage(leetcodeTotal, combinedTotal);
+  const gfgPercentage = getPercentage(gfgTotal, combinedTotal);
 
   // 🔥 Insights
   const generateInsights = () => {
     let insights = [];
 
-    if (gfgSolved > leetcodeTotal) {
+    if (gfgTotal > leetcodeTotal) {
       insights.push(
-        `🎯 You solved ${gfgSolved - leetcodeTotal} more problems on GFG than LeetCode`
+        `🎯 You solved ${gfgTotal - leetcodeTotal} more problems on GFG than LeetCode`
       );
-    } else if (leetcodeTotal > gfgSolved) {
+    } else if (leetcodeTotal > gfgTotal) {
       insights.push(
-        `⚡ You solved ${leetcodeTotal - gfgSolved} more problems on LeetCode than GFG`
+        `⚡ You solved ${leetcodeTotal - gfgTotal} more problems on LeetCode than GFG`
       );
     }
 
-    if (medium > easy && medium > hard) {
+    if (combinedMedium > combinedEasy && combinedMedium > combinedHard) {
       insights.push("💪 Strong focus on medium difficulty problems");
     }
 
-    if (hard > 0 && hard > easy) {
+    if (combinedHard > 0 && combinedHard > combinedEasy) {
       insights.push("🔥 Impressive hard problem-solving skills");
     }
 
@@ -407,7 +412,7 @@ function App() {
     labels: ["Easy", "Medium", "Hard"],
     datasets: [
       {
-        data: [easy, medium, hard],
+        data: [combinedEasy, combinedMedium, combinedHard],
         backgroundColor: [COLORS.easy, COLORS.medium, COLORS.hard],
         borderColor: COLORS.bg,
         borderWidth: 2,
@@ -416,12 +421,18 @@ function App() {
   };
 
   const barData = {
-    labels: ["LeetCode", "GFG"],
+    labels: ["Easy", "Medium", "Hard"],
     datasets: [
       {
-        label: "Problems Solved",
-        data: [leetcodeTotal, gfgSolved],
-        backgroundColor: [COLORS.blue, COLORS.green],
+        label: "LeetCode",
+        data: [lcEasy, lcMedium, lcHard],
+        backgroundColor: COLORS.blue,
+        borderRadius: 8,
+      },
+      {
+        label: "GFG",
+        data: [gfgEasy, gfgMedium, gfgHard],
+        backgroundColor: COLORS.green,
         borderRadius: 8,
       }
     ]
@@ -524,12 +535,12 @@ function App() {
               </div>
 
               <div style={inputGroupStyle}>
-                <label style={labelStyle}>GFG Total Solved</label>
+                <label style={labelStyle}>GFG Username</label>
                 <input
-                  type="number"
-                  placeholder="e.g., 630"
-                  value={gfgTotal}
-                  onChange={(e) => setGfgTotal(e.target.value)}
+                  type="text"
+                  placeholder="e.g., user_geeksforgeeks"
+                  value={gfgUsername}
+                  onChange={(e) => setGfgUsername(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && fetchData()}
                   onFocus={() => setFocusedInput("gfg")}
                   onBlur={() => setFocusedInput("")}
@@ -574,9 +585,9 @@ function App() {
               <div style={statGridStyle}>
                 {[
                   { title: "Total", value: leetcodeTotal, color: COLORS.blue },
-                  { title: "Easy", value: easy, color: COLORS.easy },
-                  { title: "Medium", value: medium, color: COLORS.medium },
-                  { title: "Hard", value: hard, color: COLORS.hard },
+                  { title: "Easy", value: lcEasy, color: COLORS.easy },
+                  { title: "Medium", value: lcMedium, color: COLORS.medium },
+                  { title: "Hard", value: lcHard, color: COLORS.hard },
                 ].map((stat, idx) => (
                   <div
                     key={idx}
@@ -595,45 +606,65 @@ function App() {
 
               {/* 🎯 GFG STATS */}
               <h2 style={sectionTitleStyle}>🎯 GFG Stats</h2>
-              <div
-                style={{
-                  ...glassCard,
-                  background: `linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(16, 185, 129, 0.1) 100%)`,
-                  marginBottom: "40px",
-                }}
-                onMouseEnter={(e) => Object.assign(e.currentTarget.style, glassCardHover)}
-                onMouseLeave={(e) => Object.assign(e.currentTarget.style, { ...glassCard, background: `linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(16, 185, 129, 0.1) 100%)` })}
-              >
-                <div style={accentBarStyle(COLORS.green)} />
-                <div style={statTitleStyle}>
-                  Total Solved
-                </div>
-                <p style={{ ...statValueStyle, color: COLORS.green }}>
-                  {gfgSolved}
-                </p>
+              <div style={statGridStyle}>
+                {[
+                  { title: "Total", value: gfgTotal, color: COLORS.green },
+                  { title: "Easy", value: gfgEasy, color: COLORS.easy },
+                  { title: "Medium", value: gfgMedium, color: COLORS.medium },
+                  { title: "Hard", value: gfgHard, color: COLORS.hard },
+                ].map((stat, idx) => (
+                  <div
+                    key={idx}
+                    style={statCardStyle}
+                    onMouseEnter={(e) => Object.assign(e.currentTarget.style, glassCardHover)}
+                    onMouseLeave={(e) => Object.assign(e.currentTarget.style, statCardStyle)}
+                  >
+                    <div style={accentBarStyle(stat.color)} />
+                    <div style={statTitleStyle}>{stat.title}</div>
+                    <p style={{ ...statValueStyle, color: stat.color }}>
+                      {stat.value}
+                    </p>
+                  </div>
+                ))}
               </div>
 
               {/* 🏆 COMBINED STATS */}
               <h2 style={sectionTitleStyle}>🏆 Combined Stats</h2>
+              <div style={statGridStyle}>
+                {[
+                  { title: "Total", value: combinedTotal, color: COLORS.cyan },
+                  { title: "Easy", value: combinedEasy, color: COLORS.easy },
+                  { title: "Medium", value: combinedMedium, color: COLORS.medium },
+                  { title: "Hard", value: combinedHard, color: COLORS.hard },
+                ].map((stat, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      ...statCardStyle,
+                      background: `linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(6, 182, 212, 0.15) 100%)`,
+                    }}
+                    onMouseEnter={(e) => Object.assign(e.currentTarget.style, glassCardHover)}
+                    onMouseLeave={(e) => Object.assign(e.currentTarget.style, { ...statCardStyle, background: `linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(6, 182, 212, 0.15) 100%)` })}
+                  >
+                    <div style={accentBarStyle(stat.color)} />
+                    <div style={statTitleStyle}>{stat.title}</div>
+                    <p style={{ ...statValueStyle, color: stat.color }}>
+                      {stat.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* 📊 Platform Contribution */}
+              <h2 style={sectionTitleStyle}>📊 Platform Contribution</h2>
               <div
                 style={{
                   ...glassCard,
                   background: `linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(6, 182, 212, 0.15) 100%)`,
                   border: `2px solid ${COLORS.cyan}40`,
-                  textAlign: "center",
-                  marginBottom: "40px",
-                  padding: "40px",
                 }}
               >
                 <div style={accentBarStyle(COLORS.cyan)} />
-                <div style={{ ...statTitleStyle, marginTop: "24px" }}>
-                  Total Combined
-                </div>
-                <p style={{ fontSize: "48px", fontWeight: "800", color: COLORS.cyan, margin: "16px 0" }}>
-                  {totalCombined}
-                </p>
-
-                {/* 📊 Percentage Bars */}
                 <div style={percentageContainerStyle}>
                   <div style={percentageItemStyle}>
                     <div style={percentageLabelStyle}>
@@ -671,14 +702,14 @@ function App() {
               <h2 style={sectionTitleStyle}>📈 Analytics</h2>
               <div style={chartGridStyle}>
                 <div style={chartCardStyle}>
-                  <div style={chartTitleStyle}>Difficulty Distribution</div>
+                  <div style={chartTitleStyle}>Combined Difficulty Distribution</div>
                   <div style={chartWrapperStyle}>
                     <Pie data={pieData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: COLORS.text } } } }} />
                   </div>
                 </div>
 
                 <div style={chartCardStyle}>
-                  <div style={chartTitleStyle}>Platform Comparison</div>
+                  <div style={chartTitleStyle}>LeetCode vs GFG by Difficulty</div>
                   <div style={chartWrapperStyle}>
                     <Bar data={barData} options={chartOptions} />
                   </div>
