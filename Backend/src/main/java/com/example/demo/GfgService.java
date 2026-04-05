@@ -1,75 +1,58 @@
 package com.example.demo;
 
 import org.springframework.stereotype.Service;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
+import org.springframework.web.client.RestTemplate;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 public class GfgService {
 
+    private final RestTemplate restTemplate;
+
+    public GfgService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
     /**
-     * Get GFG stats for a user - Extract totalSolved from profile page
-     * 
-     * Uses Jsoup to fetch the HTML profile page and regex to extract the
-     * "Problems Solved" count. Simple and reliable approach without API calls.
+     * Get GFG stats for a user using the stats card API
+     *
+     * Fetches user stats including easy, medium, hard, and total problems solved
+     * from https://gfgstatscard.vercel.app/{username}?raw=true
      */
-    public Map<String, Object> getGfgStats(String username) {
+    public GfgStatsResponse getGfgStats(String username) {
         try {
             System.out.println("[GFG Service] Fetching stats for: " + username);
 
-            // Fetch the GFG profile page
-            String url = "https://auth.geeksforgeeks.org/user/" + username + "/";
+            String url = "https://gfgstatscard.vercel.app/" + username + "?raw=true";
             System.out.println("[GFG Service] URL: " + url);
 
-            Document doc = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                    .timeout(10000)
-                    .get();
+            String response = restTemplate.getForObject(url, String.class);
+            System.out.println("[GFG Service] API response received");
 
-            // Extract all text from the page
-            String text = doc.text();
-            System.out.println("[GFG Service] Page fetched successfully");
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode root = objectMapper.readTree(response);
 
-            // Use regex to find "Problems Solved" followed by a number
-            Pattern pattern = Pattern.compile("Problems Solved\\s*(\\d+)");
-            Matcher matcher = pattern.matcher(text);
+            // Extract fields with defaults
+            int easy = root.path("Easy").asInt(0);
+            int medium = root.path("Medium").asInt(0);
+            int hard = root.path("Hard").asInt(0);
+            int total = root.path("total_problems_solved").asInt(0);
 
-            int totalSolved = 0;
-            if (matcher.find()) {
-                totalSolved = Integer.parseInt(matcher.group(1));
-                System.out.println("[GFG Service] Found Problems Solved: " + totalSolved);
-            } else {
-                System.out.println("[GFG Service] Pattern not found, trying alternative patterns");
-                // Try alternative patterns
-                Pattern altPattern1 = Pattern.compile("problems solved[:\\s]+(\\d+)");
-                Matcher altMatcher1 = altPattern1.matcher(text);
-                if (altMatcher1.find()) {
-                    totalSolved = Integer.parseInt(altMatcher1.group(1));
-                    System.out.println("[GFG Service] Found via alternative pattern: " + totalSolved);
-                }
-            }
+            System.out.println("[GFG Service] Stats - Total: " + total + ", Easy: " + easy + ", Medium: "
+                    + medium + ", Hard: " + hard);
 
-            System.out.println("[GFG Service] Total Solved extracted: " + totalSolved);
-
-            Map<String, Object> result = new HashMap<>();
-            result.put("username", username);
-            result.put("totalSolved", totalSolved);
-
-            return result;
+            return new GfgStatsResponse(username, total, easy, medium, hard);
         } catch (Exception e) {
             System.err.println("[GFG Service] Error fetching GFG stats for user " + username + ": "
                     + e.getMessage());
             e.printStackTrace();
 
-            // Return fallback response on error
-            Map<String, Object> fallback = new HashMap<>();
-            fallback.put("username", username);
-            fallback.put("totalSolved", 0);
-            return fallback;
+            // Return fallback response with zeros on error
+            System.out.println("[GFG Service] Returning fallback response with zeros");
+            return new GfgStatsResponse(username, 0, 0, 0, 0);
         }
     }
 }

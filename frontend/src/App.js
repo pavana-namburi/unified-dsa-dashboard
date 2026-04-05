@@ -605,7 +605,7 @@ function App() {
                 onMouseLeave={(e) => Object.assign(e.currentTarget.style, { ...glassCard, background: `linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(16, 185, 129, 0.1) 100%)` })}
               >
                 <div style={accentBarStyle(COLORS.green)} />
-                <div style={statTitleStyle} style={{ marginTop: "12px" }}>
+                <div style={statTitleStyle}>
                   Total Solved
                 </div>
                 <p style={{ ...statValueStyle, color: COLORS.green }}>

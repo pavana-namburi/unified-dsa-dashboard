@@ -16,11 +16,11 @@ public class DashboardController {
 
     @GetMapping
     public Map<String, Object> getDashboard(
-            @RequestParam String leetcode,
-            @RequestParam int gfgTotal) {
+            @RequestParam(required = false) String leetcode,
+            @RequestParam(required = false) String gfg) {
         System.out.println(
-                "[Dashboard Controller] GetMapping /dashboard called with leetcode=" + leetcode + ", gfgTotal="
-                        + gfgTotal);
-        return dashboardService.getDashboard(leetcode, gfgTotal);
+                "[Dashboard Controller] GetMapping /dashboard called with leetcode=" + leetcode + ", gfg="
+                        + gfg);
+        return dashboardService.getDashboard(leetcode, gfg);
     }
 }
