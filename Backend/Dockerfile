@@ -1,16 +1,17 @@
-# Use Java 17
 FROM eclipse-temurin:17-jdk-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Copy project files
 COPY . .
 
+# Fix mvnw permission
 RUN chmod +x mvnw
 
-# Build the application
+# Build jar
 RUN ./mvnw clean package -DskipTests
 
-# Run the jar
-CMD ["java", "-jar", "target/*.jar"]
+# Rename jar (avoids path issues)
+RUN mv target/demo-0.0.1-SNAPSHOT.jar app.jar
+
+# Run app
+CMD ["java", "-jar", "app.jar"]
