@@ -342,8 +342,8 @@ function App() {
       const leetParam = leetcodeUsername.trim() || "";
       const gfgParam = gfgUsername.trim() || "";
       const res = await fetch(
-        `http://localhost:8082/dashboard?leetcode=${leetParam}&gfg=${gfgParam}`
-      );
+  `https://unified-dsa-dashboard.onrender.com/dashboard?leetcode=${leetParam}&gfg=${gfgParam}`
+);
       if (!res.ok) throw new Error("Failed to fetch data from server");
       const result = await res.json();
       setData(result);
